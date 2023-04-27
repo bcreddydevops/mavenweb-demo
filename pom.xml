@@ -16,6 +16,6 @@
     </dependency>
   </dependencies>
   <build>
-    <finalName>MavenWebProject</finalName>
+    <finalName>ChinnaApp</finalName>
   </build>
 </project>
