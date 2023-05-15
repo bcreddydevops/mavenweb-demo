@@ -35,5 +35,28 @@ pipeline {
                 sh 'mvn clean deploy'
             }
         }
+        stage('Deploy War file to Tommcat'){
+            steps{
+               sshagent(['tomcat-credentials']) {
+                  sh """
+                    scp -o StrictHostKeyChecking=no target/*.war ubuntu@18.209.248.175:/opt/tomcat-9/webapps
+                    ssh -o StrictHostKeyChecking=no ubuntu@18.209.248.175 /opt/tomcat-9/bin/shutdown.sh
+                    ssh -o StrictHostKeyChecking=no ubuntu@18.209.248.175 /opt/tomcat-9/bin/startup.sh
+					
+		          """          
+               }
+			}
+		}
      }
+     post{
+        always{
+          mail bcc: '', body: "<br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL de build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "${currentBuild.result} CI: Project name -> ${env.JOB_NAME}", to: "bcreddydevops@gmail.com";
+        }
+        success{
+            echo "========pipeline executed successfully ========"
+        }
+        failure{
+            echo "========pipeline execution failed========"
+        }
+    }
 }
