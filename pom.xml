@@ -18,4 +18,15 @@
   <build>
     <finalName>ChinnaApp</finalName>
   </build>
+  
+  <distributionManagement>
+    <snapshotRepository>
+      <id>nexusdeploymentrepo</id>
+      <url>http://3.226.249.133:8081/repository/maven-snapshots/</url>
+    </snapshotRepository>
+	<repository>
+	  <id>nexusdeploymentrepo</id>
+      <url>http://3.226.249.133:8081/repository/maven-releases/</url>
+    </repository>  
+  </distributionManagement>
 </project>
