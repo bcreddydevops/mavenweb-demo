@@ -4,7 +4,7 @@
   <groupId>BCReddyDevops</groupId>
   <artifactId>MavenWebProject</artifactId>
   <packaging>war</packaging>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <name>MavenWebProject Maven Webapp</name>
   <url>http://maven.apache.org</url>
   <dependencies>
