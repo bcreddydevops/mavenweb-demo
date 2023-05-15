@@ -30,5 +30,10 @@ pipeline {
                 }
             }
         }
+        stage('nexus upload') {
+            steps{
+                sh 'mvn clean deploy'
+            }
+        }
      }
 }
