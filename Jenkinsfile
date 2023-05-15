@@ -15,18 +15,20 @@ pipeline {
                 sh 'mvn clean package'
             }
         }
-	    stage('sonarqube analysis') {
-		    steps{
-		    withSonarQubeEnv(installationName: 'sonarqube-8', credentialsId: 'sonarqube-creds') {
+	stage("Sonarqube analysis"){
+            steps{
+                script{
+                withSonarQubeEnv(installationName: 'sonarqube-8', credentialsId: 'sonarqube-creds') {
                       sh 'mvn sonar:sonar'
-		    }
-	           timeout(5) {
+                  }
+                   timeout(5) {
                       def qg = waitForQualityGate()
                       if (qg.status != 'OK') {
                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
                       }
                     }
-	             }
-	    }
+                }
+            }
+        }
      }
 }
