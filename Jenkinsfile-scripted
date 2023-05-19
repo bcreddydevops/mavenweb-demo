@@ -18,6 +18,7 @@ node {
          }
      }
     }
+    stage("Nexus Upload"){
+       sh "${mavenCMD} clean deploy"
+    }
 }
-
-
