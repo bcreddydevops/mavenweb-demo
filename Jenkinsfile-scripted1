@@ -1,0 +1,43 @@
+node {
+    try{
+     def mavenHome =  tool name: "maven-3", type: "maven"
+     def mavenCMD = "${mavenHome}/bin/mvn"
+    stage('git checkout') {
+        git url:'https://github.com/bcreddydevops/mavenweb-demo.git', branch: 'main'
+    }
+    stage('Maven Build') {
+         sh "${mavenCMD} clean package"
+    }
+    stage("sonarqube analysis"){
+        withSonarQubeEnv(installationName: 'sonarqube-8', credentialsId: 'sonarqube-creds') {
+         sh "${mavenCMD} clean sonar:sonar"
+       }
+       timeout(5) {
+         def qg = waitForQualityGate()
+         if (qg.status != 'OK') {
+         error "Pipeline aborted due to quality gate failure: ${qg.status}"
+         }
+     }
+    }
+    stage("Nexus Upload"){
+       sh "${mavenCMD} clean deploy"
+    }
+    stage("Deploy to Tomcat Server"){
+        sshagent(['tomcat-credentials']) {
+                  sh """
+                    scp -o StrictHostKeyChecking=no target/*.war ubuntu@35.170.62.13:/opt/tomcat-9/webapps
+                    ssh -o StrictHostKeyChecking=no ubuntu@35.170.62.13 /opt/tomcat-9/bin/shutdown.sh
+                    ssh -o StrictHostKeyChecking=no ubuntu@35.170.62.13 /opt/tomcat-9/bin/startup.sh
+		          """         
+         }
+    }
+	currentBuild.result = "SUCCESS"
+	echo "RESULT:${currentBuild.result}"
+	echo "Finished:${currentBuild.result}"
+  }
+  catch(Exception Error){
+    currentBuild.result = "FAILURE"
+	echo "RESULT:${currentBuild.result}"
+	echo "Finished:${currentBuild.result}"
+  }
+}
