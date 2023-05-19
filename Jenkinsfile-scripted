@@ -1,10 +1,16 @@
 node {
+     def mavenHome =  tool name: "maven-3", type: "maven"
+     def mavenCMD = "${mavenHome}/bin/mvn"
     stage('git checkout') {
         git url:'https://github.com/bcreddydevops/mavenweb-demo.git', branch: 'main'
     }
     stage('Maven Build') {
-         def mavenHome =  tool name: "maven-3", type: "maven"
-         def mavenCMD = "${mavenHome}/bin/mvn"
          sh "${mavenCMD} clean package"
     }
+    stage("sonarqube analysis"){
+        withSonarQubeEnv(installationName: 'sonarqube-8', credentialsId: 'sonarqube-creds') {
+         sh "${mavenCMD} clean sonar:sonar"
+       }
+    }
 }
+
