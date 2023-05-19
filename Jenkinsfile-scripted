@@ -11,6 +11,13 @@ node {
         withSonarQubeEnv(installationName: 'sonarqube-8', credentialsId: 'sonarqube-creds') {
          sh "${mavenCMD} clean sonar:sonar"
        }
+       timeout(5) {
+         def qg = waitForQualityGate()
+         if (qg.status != 'OK') {
+         error "Pipeline aborted due to quality gate failure: ${qg.status}"
+         }
+     }
     }
 }
+
 
