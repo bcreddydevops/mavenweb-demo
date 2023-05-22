@@ -1,0 +1,23 @@
+node {
+  try {
+      def mavenHome =  tool name: "maven-3", type: "maven"
+      def mavenCMD = "${mavenHome}/bin/mvn"
+      
+    stage('git checkout'){
+     git url:'https://github.com/bcreddydevops/mavenweb-demo.git', branch: 'main' 
+    }
+    
+    stage('maven build'){
+        sh "${mavenCMD} clean package"
+    }
+    
+    currentBuild.result = "SUCCESS"
+	echo "RESULT:${currentBuild.result}"
+	echo "Finished:${currentBuild.result}"
+  }  
+  catch(Exception Error){
+    currentBuild.result = "FAILURE"
+	echo "RESULT:${currentBuild.result}"
+	echo "Finished:${currentBuild.result}"
+    }
+}
