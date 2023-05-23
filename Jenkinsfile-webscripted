@@ -26,6 +26,15 @@ node {
     stage("Nexus Upload"){
        sh "${mavenCMD} clean deploy"
     }
+    stage("Deploy to Tomcat Server"){
+        sshagent(['tomcat-creds']) {
+                  sh """
+                    scp -o StrictHostKeyChecking=no target/*.war ubuntu@44.199.229.23:/opt/tomcat-9/webapps
+                    ssh -o StrictHostKeyChecking=no ubuntu@44.199.229.23 /opt/tomcat-9/bin/shutdown.sh
+                    ssh -o StrictHostKeyChecking=no ubuntu@44.199.229.23 /opt/tomcat-9/bin/startup.sh
+		          """         
+         }
+    }
     
     
     currentBuild.result = "SUCCESS"
