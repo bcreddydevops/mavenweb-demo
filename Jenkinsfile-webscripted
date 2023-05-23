@@ -26,6 +26,7 @@ node {
     stage("Nexus Upload"){
        sh "${mavenCMD} clean deploy"
     }
+    
     stage("Deploy to Tomcat Server"){
         sshagent(['tomcat-creds']) {
                   sh """
@@ -34,6 +35,10 @@ node {
                     ssh -o StrictHostKeyChecking=no ubuntu@44.199.229.23 /opt/tomcat-9/bin/startup.sh
 		          """         
          }
+    }
+    
+    stage("Email Notification"){
+        mail bcc: '', body: "<br>Project: ${env.JOB_NAME} <br>Build Number: ${env.BUILD_NUMBER} <br> URL de build: ${env.BUILD_URL}", cc: '', charset: 'UTF-8', from: '', mimeType: 'text/html', replyTo: '', subject: "${currentBuild.result} CI: Project name -> ${env.JOB_NAME}", to: "bcreddydevops@gmail.com";
     }
     
     
