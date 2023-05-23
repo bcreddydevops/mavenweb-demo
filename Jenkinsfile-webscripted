@@ -23,6 +23,10 @@ node {
      }
     }
     
+    stage("Nexus Upload"){
+       sh "${mavenCMD} clean deploy"
+    }
+    
     
     currentBuild.result = "SUCCESS"
 	echo "RESULT:${currentBuild.result}"
