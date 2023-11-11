@@ -1,0 +1,81 @@
+trigger:
+- main
+
+pool:
+  name: GenAI-NewVM
+
+stages:
+- stage: build
+  jobs:
+  - job: SonarQubeAnalysis
+    steps:
+    - task: SonarQubePrepare@4
+      displayName: Prepare Analysis Configuration task
+      inputs:
+        SonarQube: 'My_SonarQube'
+        scannerMode: 'Other'
+        extraProperties: |
+          sonar.projectVersion=1.0.0.0
+          sonar.projectName=OnlineBookstore
+          sonar.sources=src/main/java/
+          sonar.language=java
+          sonar.sourceEncoding=UTF-8
+      enabled: true
+
+    - task: Maven@3
+      inputs:
+        mavenPomFile: '$(Build.SourcesDirectory)/pom.xml'
+        goals: 'clean package'
+        publishJUnitResults: true
+        javaHomeOption: 'JDKVersion'
+        mavenVersionOption: 'Default'
+        mavenAuthenticateFeed: false
+        effectivePomSkip: false
+        sonarQubeRunAnalysis: true
+      enabled: true
+
+    - task: CopyFiles@2
+      displayName: 'copy war'
+      inputs:
+        SourceFolder: '$(system.defaultworkingdirectory)'
+        Contents: '**/*.war'
+        TargetFolder: '$(build.artifactstagingdirectory)'
+      condition: succeededOrFailed()
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: onlinebookstore'
+      inputs:
+        PathtoPublish: '$(build.artifactstagingdirectory)'
+        ArtifactName: 'onlinebookstore'
+        publishLocation: 'Container'
+      condition: succeededOrFailed()
+
+    - task: SonarQubePublish@4
+      displayName: Publish Quality Gate Result
+      inputs:
+        pollingTimeoutSec: '300'
+      enabled: true
+
+- stage: deploy
+  jobs:
+  - deployment: DeployWeb
+    environment: DEV
+    displayName: deploy Web App
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download Artifact'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'onlinebookstore'
+              downloadPath: '$(System.ArtifactsDirectory)'
+
+          - task: CopyFiles@2
+            displayName: 'Copy WAR file to target folder'
+            inputs:
+              SourceFolder: '$(System.ArtifactsDirectory)/onlinebookstore/target'
+              Contents: '**/*.war'
+              TargetFolder: '/home/azureuser/DEV'
