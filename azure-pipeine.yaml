@@ -1,0 +1,188 @@
+working pipeline
+=================
+trigger:
+- main
+
+pool:
+  name: GenAI-NewVM
+
+steps:
+
+- task: SonarQubePrepare@4
+  displayName: Prepare Analysis Configuration task
+  inputs:
+    SonarQube: 'My_SonarQube'
+    scannerMode: 'Other'
+    extraProperties: |
+      sonar.projectVersion=1.0.0.0
+      sonar.projectName=OnlineBookstore
+      sonar.sources=src/main/java/
+      sonar.language=java
+      sonar.sourceEncoding=UTF-8
+  enabled: true
+
+
+- task: Maven@3
+  inputs:
+    mavenPomFile: '$(Build.SourcesDirectory)/pom.xml'
+    goals: 'clean package'
+    publishJUnitResults: true
+    javaHomeOption: 'JDKVersion'
+    mavenVersionOption: 'Default'
+    mavenAuthenticateFeed: false
+    effectivePomSkip: false
+    sonarQubeRunAnalysis: true
+  enabled: true
+
+ 
+- task: SonarQubePublish@4
+  displayName: Publish Quality Gate Result
+  inputs:
+    pollingTimeoutSec: '300'
+  enabled: true
+  
+  
+===========================================
+working pipeline
+
+trigger:
+- main
+
+pool:
+  name: GenAI-NewVM
+
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    displayName: Build Job
+    steps:
+    - task: Maven@3
+      inputs:
+        mavenPomFile: '$(Build.SourcesDirectory)/pom.xml'
+        goals: 'clean package'
+        publishJUnitResults: true
+        javaHomeOption: 'JDKVersion'
+        mavenVersionOption: 'Default'
+        mavenAuthenticateFeed: false
+        effectivePomSkip: false
+      enabled: true
+
+- stage: QualityGate
+  jobs:
+  - job: PublishQualityGate
+    displayName: Publish Quality Gate Result
+    steps:
+    - task: SonarQubePrepare@4
+      displayName: Prepare Analysis Configuration task
+      inputs:
+        SonarQube: 'My_SonarQube'
+        scannerMode: 'Other'
+        extraProperties: |
+          sonar.projectVersion=1.0.0.0
+          sonar.projectName=OnlineBookstore
+          sonar.sources=src/main/java/
+          sonar.language=java
+          sonar.sourceEncoding=UTF-8
+      enabled: true
+    - task: SonarQubePublish@4
+      displayName: Publish Quality Gate Result
+      inputs:
+        pollingTimeoutSec: '300'
+        enabled: true
+
+
+
+========================
+my working pipeline nov9th
+--------------------------------
+trigger:
+- main
+
+pool:
+  name: GenAI-NewVM
+
+stages:
+  - stage: CheckoutCode
+    jobs:
+       - job: 'Checkoutgitcode'
+         steps:
+         - checkout: self
+  - stage: 'Build'
+    jobs:
+    -  job: 'BuildJob'
+       steps:
+        - task: Maven@4
+          inputs:
+            mavenPomFile: 'pom.xml'
+            goals: 'clean package'
+            publishJUnitResults: false
+            javaHomeOption: 'JDKVersion'
+            mavenVersionOption: 'Default'
+            mavenAuthenticateFeed: false
+            effectivePomSkip: false
+        - task: CopyFiles@2
+          displayName: 'copy the artifact'
+          inputs:
+            SourceFolder: '$(system.defaultworkingdirectory)'
+            Contents: '**/*.war'
+            TargetFolder: '$(build.artifactstagingdirectory)'
+        - task: PublishBuildArtifacts@1
+          displayName: 'publish artifact'
+          inputs:
+            PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+            ArtifactName: 'onlinebookstore'
+            publishLocation: 'Container'
+          condition: succeededOrFailed()
+		
+		
+========================
+working build and deploy stage 
+
+trigger:
+- main
+
+pool:
+  name: GenAI-NewVM
+  demands: maven
+
+stages: 
+- stage: Build
+  jobs:
+   - job: Build
+     steps:
+     - task: Maven@3
+       displayName: build
+       inputs:
+          goals: clean package
+
+     - task: CopyFiles@2
+       displayName: 'copy war'
+       inputs:
+          SourceFolder: '$(system.defaultworkingdirectory)'
+          Contents: '**/*.war'
+          TargetFolder: '$(build.artifactstagingdirectory)'
+       condition: succeededOrFailed()
+
+     - task: PublishBuildArtifacts@1
+       displayName: 'Publish Artifact: onlinebookstore'
+       inputs:
+          PathtoPublish: '$(build.artifactstagingdirectory)'
+          ArtifactName: onlinebookstore
+       condition: succeededOrFailed()
+
+- stage: deploy
+  jobs:
+  - deployment: DeployWeb
+    environment: DEV
+    displayName: deploy Web App
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: CopyFiles@2
+            displayName: 'Copy WAR file to target folder'
+            inputs:
+             SourceFolder: '$(Pipeline.Workspace)/onlinebookstore/target'
+             Contents: '**/*.war'
+             TargetFolder: '/home/azureuser/DEV'
